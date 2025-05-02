@@ -1,114 +1,61 @@
-# Azure-AD-Sign-In-Failure-Monitor
-A simple PowerShell script to watch for Azure AD sign‑in failures—especially brute‑force attempts against the Azure CLI—log offenders to a CSV, and send desktop notifications via BurntToast.
-Background
+# AuthFailuresCheck
 
-Over the past weeks, our organization has seen a sharp rise in automated brute‑force attempts targeting the Azure CLI. Attackers are hammering account credentials to gain directory access. Early detection and rapid response are critical to limit risk and prevent account lockouts or unauthorized access.
+A headless PowerShell script to monitor and alert on Azure AD sign-in failures (e.g. brute-force Azure CLI attacks), log offenders to CSV, and pop a desktop notification via BurntToast.
 
-This tool helps you:
+---
 
-Continuously monitor Azure AD sign‑in logs via Microsoft Graph
+## 🛡️ Why This Matters
 
-Alert when any user has ≥ 10 failures in the last 24 hours
+Over the past weeks, our organization has seen a large number of automated Azure CLI authentication attempts—likely brute-force or spray attacks—targeting our Azure AD tenants. Left unchecked, these failures can indicate compromised credentials or vulnerability scans that precede a real breach.
 
-Log offending users and counts to AuthFailureLog.csv
+**AuthFailuresCheck** helps you:
 
-Notify on your desktop with a direct “View Log” button
+- **Detect** high-volume sign-in failures (configurable threshold)
+- **Log** offending user principal names (UPNs) and failure counts
+- **Notify** admins immediately with a BurntToast popup
 
-Features
+---
 
-Headless monitoring: Run in PowerShell 7+ without user interaction
+## 🚀 Features
 
-OAuth2 client‑credentials flow: Securely authenticate to Microsoft Graph
+- **OAuth2 Client-Credentials** against Microsoft Graph
+- **24-hour sliding window** of sign-in data
+- **Configurable threshold** (default: 10 failures)
+- **CSV audit log** (`AuthFailureLog.csv`)
+- **BurntToast** push notifications to Windows 10/11 desktops
 
-Configurable threshold: Default is 10 failures per 24h
+---
 
-CSV logging: Append Timestamp, UserPrincipalName, FailureCount
+## 🧩 Requirements
 
-BurntToast notifications: Instant pop‑ups with a link to view the log
+- **PowerShell 7+** (`pwsh.exe`)
+- An **Azure AD App Registration** with:
+  - **Application (client) ID**  
+  - **Directory (tenant) ID**  
+  - **Client secret**  
+  - API permission: **AuditLog.Read.All** (granted/admin-consented)
+- **BurntToast** PowerShell module (auto-installed at first run)
 
-Prerequisites
+---
 
-PowerShell 7+: Ensure pwsh.exe is installed and in PATH
+## ⚙️ Installation
+   **Clone the repo**  
+   ```bash
+   git clone https://github.com/your-org/AuthFailuresCheck.git
+   cd AuthFailuresCheck
+  ```
 
-Azure AD App Registration:
+## ⏰ Scheduling
+To get continuous monitoring, schedule via Task Scheduler:
 
-Application (client) type with Client Credentials
+**Action**
+  Program/script: pwsh.exe
+  Arguments: -NoProfile -ExecutionPolicy Bypass -File "C:\path\AuthFailuresCheck.ps1"
 
-API permission: AuditLog.Read.All (Application)
+**Trigger**
+  e.g. Every hour, or At startup
 
-Grant admin consent
-
-BurntToast module: The script will auto‑install if missing
-
-Windows 10/11 for desktop notifications
-
-Installation
-
-Clone the repo
-
-git clone https://github.com/your-org/azure-ad-auth-monitor.git
-
-Change to the script directory
-
-cd azure-ad-auth-monitor
-
-Configuration
-
-1) Secure your credentials
-
-Store your Azure AD credentials in environment variables (recommended):
-
-$env:AZ_TENANT_ID     = 'your-tenant-id'
-$env:AZ_CLIENT_ID     = 'your-client-id'
-$env:AZ_CLIENT_SECRET = 'your-client-secret'
-
-Tip: Use Azure Key Vault or a secrets manager to inject these at runtime.
-
-2) (Optional) Customize thresholds & paths
-
-Threshold: Edit the $Threshold variable in AuthFailuresCheck.ps1 to change the failure count trigger.
-
-Log location: Adjust $csvLog to point to a different file or folder.
-
-Usage
-
-Run the script manually or via a scheduler:
-
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File AuthFailuresCheck.ps1
-
-What happens:
-
-Queries Graph for sign‑ins in the last 24 h
-
-Filters out successful attempts
-
-Groups by userPrincipalName and checks if count ≥ Threshold
-
-Appends offenders to AuthFailureLog.csv
-
-Fires a BurntToast notification with a “View Log” button
-
-Scheduling via Task Scheduler
-
-Open Task Scheduler and select Create Task.
-
-General: Run whether user is logged on or not; configure for Windows 10/11.
-
-Triggers:
-
-New → Begin the task: On a schedule
-
-Daily; Recur every 1 day
-
-Advanced → Repeat task every 1 hour for a duration of 24 hours
-
-Actions:
-
-New → Action: Start a program
-
-Program/script: pwsh.exe
-
-Add arguments: -NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\AuthFailuresCheck.ps1"
-
-OK to save. Ensure the account has “Log on as a batch job” rights.
-
+## 🔍 How It Helps Monitor Azure CLI Brute-Force Attempts
+Azure CLI uses modern auth: each failure is logged under Microsoft Graph sign-in audit logs.
+AuthFailuresCheck queries those logs for non-interactive failures (appDisplayName ne 'Windows'), so it captures Azure CLI, PowerShell Az module, REST-API calls, etc.
+By grouping failures per UPN and applying a failure threshold, you get early warning of potential credential-guessing attacks—without manually scrolling through hundreds of sign-in events.
