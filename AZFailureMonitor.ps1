@@ -1,5 +1,4 @@
 <#
-  File: C:\Scripts\AuthFailuresCheck.ps1
   Purpose:
     • Headless monitor for Azure AD sign-in failures (non-desktop)
     • Logs users with ≥10 failures in the last 24 h to a CSV
